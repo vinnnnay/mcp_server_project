@@ -1,4 +1,6 @@
+import { realpathSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { fileURLToPath } from "node:url";
 import type { DataPort } from "../db/port.js";
 import { GateError } from "../gate/errors.js";
 import type { Gate } from "../gate/gate.js";
@@ -225,7 +227,23 @@ function escape(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, "/")}`) {
+/**
+ * True when this file is the entry point. Comparing against a hand-built
+ * `file://` string is wrong on Windows: import.meta.url is `file:///C:/...`
+ * with three slashes, so the check never matched and `npm run approver:web`
+ * exited silently with status 0.
+ */
+function isEntryPoint(): boolean {
+  const invoked = process.argv[1];
+  if (!invoked) return false;
+  try {
+    return realpathSync(invoked) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint()) {
   const { loadConfig } = await import("../config.js");
   const { Gate } = await import("../gate/gate.js");
   const config = loadConfig();
