@@ -138,9 +138,18 @@ npm run build
 npm run approver:web        # the human end, on :7337
 ```
 
-Then point Claude Desktop at `dist/index.js` using
-`claude_desktop_config.example.json`. Approve from the browser, or from the
-terminal:
+Register the server with Claude Desktop:
+
+```bash
+npm run build
+npm run claude-desktop     # merges into any existing config, backs it up first
+```
+
+Claude Code picks it up from `.mcp.json` with no setup. Neither config holds
+credentials: the server reads `.env` from the project root wherever it is
+started from, and prints `backend=supabase` on stderr when it found them.
+
+Approve from the browser, or from the terminal:
 
 ```bash
 npm run approver -- list

@@ -19,7 +19,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "demo": "tsx scripts/demo.ts",
     "doctor": "tsx scripts/doctor.ts",
-    "migrate": "tsx scripts/migrate.ts"
+    "migrate": "tsx scripts/migrate.ts",
+    "claude-desktop": "tsx scripts/install-claude-desktop.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
