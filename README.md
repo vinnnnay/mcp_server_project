@@ -145,6 +145,12 @@ npm run build
 npm run claude-desktop     # merges into any existing config, backs it up first
 ```
 
+It finds the config wherever Claude Desktop keeps it. Installed from the
+Microsoft Store the app is an MSIX package with a virtualized AppData, so its
+config lives under `LocalCacheRoamingClaude` and `%APPDATA%Claude` stays
+empty — writing to the classic path there produces a config the app silently
+never reads.
+
 Claude Code picks it up from `.mcp.json` with no setup. Neither config holds
 credentials: the server reads `.env` from the project root wherever it is
 started from, and prints `backend=supabase` on stderr when it found them.

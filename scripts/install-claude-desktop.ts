@@ -1,4 +1,11 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
 import { projectRoot } from "../src/paths.js";
@@ -15,10 +22,38 @@ import { projectRoot } from "../src/paths.js";
  */
 const SERVER_NAME = "gated-data";
 
+/**
+ * Installed from the Microsoft Store, Claude Desktop is an MSIX package with a
+ * virtualized AppData: its config lives under LocalCache, and %APPDATA%\Claude
+ * stays empty. Writing to the classic path there produces a config the app
+ * never reads, with no error to explain why.
+ */
+function msixConfigPath(): string | null {
+  const packages = join(
+    process.env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local"),
+    "Packages",
+  );
+  if (!existsSync(packages)) return null;
+
+  for (const entry of readdirSync(packages)) {
+    if (!entry.startsWith("Claude")) continue;
+    const dir = join(packages, entry, "LocalCache", "Roaming", "Claude");
+    if (existsSync(dir)) return join(dir, "claude_desktop_config.json");
+  }
+  return null;
+}
+
 function configPath(): string {
   switch (platform()) {
     case "win32":
-      return join(process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"), "Claude", "claude_desktop_config.json");
+      return (
+        msixConfigPath() ??
+        join(
+          process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"),
+          "Claude",
+          "claude_desktop_config.json",
+        )
+      );
     case "darwin":
       return join(homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json");
     default:
