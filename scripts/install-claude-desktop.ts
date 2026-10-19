@@ -108,7 +108,10 @@ const existing = Object.keys(config.mcpServers ?? {}).filter((n) => n !== SERVER
 config.mcpServers = {
   ...(config.mcpServers ?? {}),
   [SERVER_NAME]: {
-    command: "node",
+    // Absolute path to node, not the bare name: a Store-installed Claude
+    // Desktop runs in an MSIX container whose PATH need not include nodejs,
+    // and a command it cannot resolve fails with nothing written to any log.
+    command: process.execPath.replace(/\\/g, "/"),
     // Absolute: Claude Desktop does not start the server in this folder.
     args: [entryPoint.replace(/\\/g, "/")],
   },
