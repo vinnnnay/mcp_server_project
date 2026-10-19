@@ -1,0 +1,36 @@
+{
+  "name": "gated-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server exposing internal data to LLM agents with server-enforced human-in-the-loop approval on destructive operations",
+  "bin": {
+    "gated-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/index.ts",
+    "approver": "tsx src/approver/cli.ts",
+    "approver:web": "tsx src/approver/web.ts",
+    "seed": "tsx scripts/seed.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "evals": "tsx scripts/report.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "demo": "tsx scripts/demo.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@supabase/supabase-js": "^2.49.4",
+    "yaml": "^2.7.1",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  }
+}

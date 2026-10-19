@@ -1,0 +1,53 @@
+# Authorization policy for the gated MCP server.
+# First matching rule wins. Anything that matches no rule hits `default`.
+#
+#   allow   -> executed immediately, audited
+#   approve -> proposal only; a human must approve out of band before commit
+#   deny    -> refused outright, never proposed
+
+default: deny
+
+# Hard ceiling enforced before any rule is consulted. A bug in the rules below
+# can never authorize an unbounded write.
+max_rows_per_operation: 50
+
+# Approvals are time-boxed. An approval older than this is void.
+approval_ttl_seconds: 600
+
+# Columns treated as personal data. Any operation touching one escalates.
+pii_columns:
+  customers: [email, phone, address, date_of_birth]
+  support_tickets: [reporter_email]
+
+rules:
+  - name: audit-log-is-immutable
+    match: { kind: "*", table: audit_log }
+    effect: deny
+
+  - name: approvals-are-not-agent-writable
+    match: { kind: "*", table: pending_operations }
+    effect: deny
+
+  - name: deletes-always-need-a-human
+    match: { kind: delete }
+    effect: approve
+
+  - name: bulk-changes-need-a-human
+    match: { kind: "*", rows: ">5" }
+    effect: approve
+
+  - name: pii-changes-need-a-human
+    match: { kind: "*", pii: true }
+    effect: approve
+
+  - name: billing-changes-need-a-human
+    match: { kind: "*", columns: [plan, mrr, credit_limit, status] }
+    effect: approve
+
+  - name: routine-single-row-edits
+    match: { kind: update, rows: "<=1", pii: false }
+    effect: allow
+
+  - name: new-support-tickets
+    match: { kind: create, table: support_tickets, pii: false }
+    effect: allow
