@@ -1,5 +1,4 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { GENESIS_HASH, sealEntry } from "../audit/chain.js";
 import type { AuditEntry, Operation, Proposal, Row, TableSchema } from "../types.js";
 import type { AtomicCommitOutcome, DataPort, RowsAffected } from "./port.js";
 
@@ -78,9 +77,16 @@ export class SupabasePort implements DataPort {
 
   async searchRows(table: string, queryText: string, limit = 50): Promise<Row[]> {
     const schema = this.requireTable(table);
-    const textColumns = schema.columns.filter((c) => c !== "id");
-    const escaped = queryText.replace(/[%,()]/g, " ");
-    const filter = textColumns.map((c) => `${c}.ilike.%${escaped}%`).join(",");
+    if (schema.search_columns.length === 0) return [];
+
+    // The query is a literal substring, matching the in-memory backend. LIKE
+    // wildcards are escaped first, then the result is quoted for PostgREST so
+    // that commas, parentheses and quotes cannot break out of the or() filter.
+    const literal = queryText.replace(/([\\%_])/g, "\\$1");
+    const quoted = literal.replace(/(["\\])/g, "\\$1");
+    const filter = schema.search_columns
+      .map((c) => `${c}.ilike."%${quoted}%"`)
+      .join(",");
     const { data, error } = await this.client
       .from(table)
       .select("*")
@@ -160,27 +166,28 @@ export class SupabasePort implements DataPort {
     if (error) throw new Error(`updateProposal: ${error.message}`);
   }
 
+  /**
+   * Delegates to the append_audit function (sql/003), which takes an advisory
+   * lock before reading the chain head. Reading the head over REST and then
+   * inserting is a race: concurrent appends collide on the primary key, and a
+   * dropped append means a missing audit record.
+   */
   async appendAudit(
     entry: Omit<AuditEntry, "seq" | "prev_hash" | "entry_hash">,
   ): Promise<AuditEntry> {
-    const { data, error } = await this.client
-      .from("audit_log")
-      .select("seq, entry_hash")
-      .order("seq", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) throw new Error(`appendAudit(head): ${error.message}`);
-
-    const head = data as { seq: number; entry_hash: string } | null;
-    const sealed = sealEntry({
-      ...entry,
-      seq: (head?.seq ?? 0) + 1,
-      prev_hash: head?.entry_hash ?? GENESIS_HASH,
+    const { data, error } = await this.client.rpc("append_audit", {
+      p_actor: entry.actor,
+      p_action: entry.action,
+      p_approval_id: entry.approval_id,
+      p_operation: entry.operation,
+      p_payload_hash: entry.payload_hash,
+      p_outcome: entry.outcome,
+      p_error_code: entry.error_code,
+      p_diff: entry.diff,
+      p_ts: entry.ts,
     });
-
-    const { error: insertError } = await this.client.from("audit_log").insert(sealed);
-    if (insertError) throw new Error(`appendAudit(insert): ${insertError.message}`);
-    return sealed;
+    if (error) throw new Error(`appendAudit: ${error.message}`);
+    return normalizeAuditEntry(data);
   }
 
   /**
@@ -216,6 +223,21 @@ export class SupabasePort implements DataPort {
       .select("*")
       .order("seq", { ascending: true });
     if (error) throw new Error(`listAudit: ${error.message}`);
-    return (data ?? []) as AuditEntry[];
+    return (data ?? []).map(normalizeAuditEntry);
   }
+}
+
+/**
+ * PostgREST renders timestamptz as `2026-01-01T12:00:00.000+00:00`, while both
+ * the Node and SQL sides hash the `...Z` form that Date#toISOString() produces.
+ * Without this, every entry read back would fail verification and the audit log
+ * would look tampered with when it is intact.
+ */
+function normalizeAuditEntry(row: unknown): AuditEntry {
+  const entry = row as AuditEntry;
+  return {
+    ...entry,
+    seq: Number(entry.seq),
+    ts: new Date(entry.ts).toISOString(),
+  };
 }

@@ -72,6 +72,12 @@ export interface TableSchema {
   name: string;
   columns: string[];
   pii_columns: string[];
+  /**
+   * Columns a substring search may scan. Only text-typed columns belong here:
+   * Postgres has no ILIKE for date or numeric, so including one makes every
+   * search on the table fail.
+   */
+  search_columns: string[];
   readonly?: boolean;
 }
 

@@ -57,12 +57,14 @@ export class MemoryPort implements DataPort {
 
   async searchRows(table: string, query: string, limit = 50): Promise<Row[]> {
     const needle = query.toLowerCase();
+    const searchable = this.tables.get(table)?.search_columns ?? [];
     const all = [...(this.rows.get(table)?.values() ?? [])];
     return all
       .filter((row) =>
-        Object.values(row).some(
-          (v) => typeof v === "string" && v.toLowerCase().includes(needle),
-        ),
+        searchable.some((column) => {
+          const value = row[column];
+          return typeof value === "string" && value.toLowerCase().includes(needle);
+        }),
       )
       .slice(0, limit)
       .map((r) => ({ ...r }));

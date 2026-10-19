@@ -15,6 +15,7 @@ const CATEGORIES: Record<string, string> = {
   "delegation.test.ts": "Atomic delegation",
   "identity.test.ts": "Approver identity",
   "postgres.test.ts": "Atomic commit (Postgres)",
+  "supabase.test.ts": "Supabase adapter",
 };
 
 // Invoke vitest's entry point directly rather than through npx: on Windows,

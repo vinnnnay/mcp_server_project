@@ -5,18 +5,22 @@ export const CUSTOMERS: TableSchema = {
   name: "customers",
   columns: ["id", "name", "email", "phone", "address", "date_of_birth", "plan", "mrr", "status", "notes"],
   pii_columns: ["email", "phone", "address", "date_of_birth"],
+  // date_of_birth (date) and mrr (numeric) are deliberately absent.
+  search_columns: ["id", "name", "email", "phone", "address", "plan", "status", "notes"],
 };
 
 export const SUPPORT_TICKETS: TableSchema = {
   name: "support_tickets",
   columns: ["id", "customer_id", "subject", "body", "priority", "state", "reporter_email"],
   pii_columns: ["reporter_email"],
+  search_columns: ["id", "customer_id", "subject", "body", "priority", "state", "reporter_email"],
 };
 
 export const AUDIT_LOG_TABLE: TableSchema = {
   name: "audit_log",
   columns: ["id", "seq", "actor", "action"],
   pii_columns: [],
+  search_columns: [],
   readonly: true,
 };
 

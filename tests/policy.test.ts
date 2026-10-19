@@ -65,7 +65,10 @@ describe("policy classification", () => {
 
   it("refuses to let the agent write its own approval records", async () => {
     const { gate, port } = harness();
-    port.defineTable({ name: "pending_operations", columns: ["id", "status"], pii_columns: [] }, []);
+    port.defineTable(
+      { name: "pending_operations", columns: ["id", "status"], pii_columns: [], search_columns: [] },
+      [],
+    );
     const code = await refusal(
       gate.propose(
         { kind: "update", table: "pending_operations", id: "x", patch: { status: "approved" } },
