@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { fromProject } from "./paths.js";
 import type { DataPort } from "./db/port.js";
 import { SupabasePort } from "./db/supabase.js";
 import { CUSTOMERS, SUPPORT_TICKETS, seedMemoryPort } from "./fixtures.js";
@@ -18,7 +18,7 @@ export interface AppConfig {
 export function loadConfig(): AppConfig {
   loadDotEnv();
 
-  const policyPath = resolve(process.env.POLICY_PATH ?? "policy.yaml");
+  const policyPath = fromProject(process.env.POLICY_PATH ?? "policy.yaml");
   if (!existsSync(policyPath)) {
     throw new Error(`policy file not found: ${policyPath}`);
   }

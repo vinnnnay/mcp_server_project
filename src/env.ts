@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fromProject } from "./paths.js";
 
 /**
  * Minimal .env loader. Real environment variables always win, so a value
@@ -7,7 +7,7 @@ import { resolve } from "node:path";
  * overridden by a stale file.
  */
 export function loadDotEnv(path = ".env"): void {
-  const file = resolve(path);
+  const file = fromProject(path);
   if (!existsSync(file)) return;
 
   for (const rawLine of readFileSync(file, "utf8").split(/\r?\n/)) {

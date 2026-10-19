@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "gated-data": {
+      "command": "node",
+      "args": ["dist/index.js"]
+    }
+  }
+}
