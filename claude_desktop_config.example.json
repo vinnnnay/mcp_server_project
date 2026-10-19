@@ -2,12 +2,14 @@
   "mcpServers": {
     "gated-data": {
       "command": "node",
-      "args": ["C:\Users\vkvin\OneDrive\Documents\mcpserver\dist\index.js"],
+      "args": ["C:/Users/vkvin/OneDrive/Documents/mcpserver/dist/index.js"],
       "env": {
         "SUPABASE_URL": "https://xxxxxxxxxxxx.supabase.co",
         "SUPABASE_SERVICE_ROLE_KEY": "",
         "AGENT_IDENTITY": "claude-desktop",
-        "APPROVER_BASE_URL": "http://localhost:7337"
+        "APPROVER_BASE_URL": "http://localhost:7337",
+        "APPROVER_AUTH": "link",
+        "APPROVER_TOKEN_SECRET": "change-me-to-a-long-random-string"
       }
     }
   }
