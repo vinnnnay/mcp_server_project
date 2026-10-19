@@ -6,7 +6,7 @@ approve out of band before anything changes.
 
 ```
 Prompt injection: 10/10 payloads reached the tool layer, 0/10 mutated data.
-Suite: 86/86 passing  (72 without a database, 14 more against Postgres)
+Suite: 102/102 passing  (72 with no database and no API key)
 ```
 
 ## Why this is not just the client's "Allow?" dialog
@@ -112,7 +112,7 @@ commit_operation_atomic  executed: 1 | outcomes: executed, E_STATE_DRIFT
 
 ```bash
 npm install
-npm test           # 72 passing, 14 Postgres cases skipped
+npm test           # 72 passing, 30 database cases skipped
 npm run evals      # the per-category table above
 npm run demo       # approver UI on :7337 with proposals already waiting
 npm run dev        # stdio MCP server + in-process approver on :7337
@@ -227,7 +227,7 @@ Two suites answering two different questions.
 
 | Suite | Question | Cases |
 |---|---|---|
-| vitest | Does the gate hold when the agent is fully compromised? | 86 |
+| vitest | Does the gate hold when the agent is fully compromised? | 102 |
 | promptfoo | Does the model report a pending approval honestly? | 4 |
 
 ```
@@ -240,7 +240,8 @@ MCP end-to-end             4/4
 Atomic delegation          3/3
 Approver identity         18/18
 Atomic commit (Postgres)  14/14
-TOTAL                     86/86
+Supabase adapter          16/16
+TOTAL                    102/102
 ```
 
 The Postgres group is skipped unless `DATABASE_URL` is set:
@@ -251,11 +252,23 @@ psql "$DATABASE_URL" -f sql/001_schema.sql -f sql/002_atomic_commit.sql
 DATABASE_URL=postgres://postgres:postgres@localhost:55432/gated npm run evals
 ```
 
-promptfoo needs `ANTHROPIC_API_KEY`:
+**The server never calls an LLM.** It is the thing an LLM calls, so the whole
+suite above runs with no API key and no cost.
+
+The promptfoo group is the one exception, since asking whether a model reports
+a pending approval honestly requires a model. It defaults to Gemini, which has
+a free tier:
 
 ```bash
+export GOOGLE_API_KEY=...        # https://aistudio.google.com/apikey
 npx promptfoo@latest eval -c promptfoo/promptfooconfig.yaml
 ```
+
+Swap the provider id for `anthropic:messages:claude-opus-5` to run the same
+four cases against Claude. The assertions are about behaviour, not a vendor.
+
+These four have not been run here — no key was available — so unlike every
+number above, they are a suite to execute rather than a result to quote.
 
 ## Layout
 
@@ -276,8 +289,10 @@ src/
 sql/001_schema.sql    tables, append-only triggers, RLS
 sql/002_atomic_commit.sql
                       canonical_jsonb, precondition_hash, commit_operation_atomic
+sql/003_audit_append_rpc.sql
+                      append_audit under an advisory lock
 policy.yaml           authorization rules
-tests/                the 86 cases
+tests/                the 102 cases
 ```
 
 ## Known limits
