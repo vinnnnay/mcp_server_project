@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "evals": "tsx scripts/report.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "demo": "tsx scripts/demo.ts"
+    "demo": "tsx scripts/demo.ts",
+    "doctor": "tsx scripts/doctor.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

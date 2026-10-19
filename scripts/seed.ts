@@ -1,10 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
+import { loadDotEnv } from "../src/env.js";
 import { customerRows, ticketRows } from "../src/fixtures.js";
 
 /**
  * Loads the demo dataset into Supabase, injection payloads included. Run after
  * applying sql/001_schema.sql:  npm run seed
  */
+loadDotEnv();
+
 const url = process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

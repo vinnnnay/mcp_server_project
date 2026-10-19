@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import type { DataPort } from "./db/port.js";
 import { SupabasePort } from "./db/supabase.js";
 import { CUSTOMERS, SUPPORT_TICKETS, seedMemoryPort } from "./fixtures.js";
+import { loadDotEnv } from "./env.js";
 import { Policy } from "./gate/policy.js";
 
 export interface AppConfig {
@@ -15,6 +16,8 @@ export interface AppConfig {
 }
 
 export function loadConfig(): AppConfig {
+  loadDotEnv();
+
   const policyPath = resolve(process.env.POLICY_PATH ?? "policy.yaml");
   if (!existsSync(policyPath)) {
     throw new Error(`policy file not found: ${policyPath}`);
