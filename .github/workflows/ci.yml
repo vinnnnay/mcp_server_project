@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  # The gate's own tests need nothing but Node. Running them as their own job
+  # keeps that true: if someone makes the core depend on a database, this fails
+  # while the job below still passes, which says exactly what went wrong.
+  unit:
+    name: Gate (no database)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+
+  integration:
+    name: Full suite (Postgres + PostgREST)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # Same script developers run locally, so CI cannot drift from the
+      # documented setup. It starts Postgres, applies the migrations, starts
+      # PostgREST, mints a service-role JWT and prints the variables.
+      - name: Start test environment
+        run: bash scripts/testenv.sh | sed 's/^export //' >> "$GITHUB_ENV"
+
+      - name: Evals
+        run: npm run evals
+
+      - name: PostgREST logs
+        if: failure()
+        run: docker logs gated-mcp-rest
+
+      - name: Tear down
+        if: always()
+        run: bash scripts/testenv.sh down

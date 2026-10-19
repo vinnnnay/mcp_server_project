@@ -295,6 +295,14 @@ policy.yaml           authorization rules
 tests/                the 102 cases
 ```
 
+## CI
+
+`.github/workflows/ci.yml` runs two jobs. The first runs the gate's tests with
+nothing but Node: if the core ever starts depending on a database, that job
+fails while the second still passes, which names the problem precisely. The
+second runs `scripts/testenv.sh` — the same script used locally, so CI cannot
+drift from the documented setup — and then the full suite.
+
 ## Known limits
 
 - The in-memory backend still commits in two steps. That is fine for tests and
